@@ -93,3 +93,224 @@ by finalnie:
 git pull --ff-only
 git log --oneline -5
 ```
+
+
+## RUNDA 2: PRACA RÓWNOLEGŁA, NA BRANCHACH
+
+Wszyscy zaczynają od identycznego stanu na głównym branchu:
+
+```
+git checkout main
+git pull --ff-only
+```
+
+### 1. WSZYSCY
+
+Każda z osób w zespole tworzy brancha (lokalnie, u siebie) o unikalnej nazwie, według schematu:
+
+```
+git checkout -b feature/interfejs-loginOsobyNaGithub
+```
+
+### 2. OSOBA A:
+
+Edytuje plik: `release-room/modules/interfejs.md`, a następnie:
+
+```
+git add release-room/modules/interfejs.md
+git commit -m "Przygotuj moduł interfejsu"
+git push -u origin feature/interfejs-loginOsobyANaGithub
+```
+
+### 3. OSOBA B:
+
+Dodaje bardziej szczegółową informację do modułu logiki: `release-room/modules/logika.md`, a następnie:
+
+```
+git add release-room/modules/logika.md
+git commit -m "Uzupełnij opis walidacji"
+git push -u origin feature/logika-loginOsobyBNaGithub
+```
+
+### 4. OSOBA C:
+
+Dodaje wyniki testów `release-room/modules/testy.md`, a następnie:
+
+```
+git add release-room/modules/testy.md
+git commit -m "Uzupełnij wyniki testów"
+git push -u origin feature/testy-loginOsobyCNaGithub
+```
+
+### 5. INTEGRACJA BRANCHY
+
+OSOBA A - Release Manager - przechodzi na branch `main`:
+
+```
+git checkout main
+git pull --ff-only
+```
+
+Następnie pobiera i integruje branche od wszystkich członków zespołu:
+
+```
+git pull --no-rebase --no-edit origin feature/interfejs-loginOsobyANaGithub
+git pull --no-rebase --no-edit origin feature/logika-loginOsobyBNaGithub
+git pull --no-rebase --no-edit origin feature/testy-loginOsobyCNaGithub
+```
+
+By finalnie wypchnąć zintegrowany branch `main`
+
+```
+git push origin main
+```
+
+## RUNDA 3: KONTROLOWANY KONFLIKT
+
+Cel: Zasymulowanie sytuacji, w której dwie osoby robią zmiany w tym samym miejscu w kodzie
+
+### DWIE Z OSÓB Z ZESPOŁU
+
+Tworzenie branchy:
+
+```
+git checkout -b decision/deploy-loginOsobyANaGithub
+```
+
+```
+git checkout -b decision/deploy-loginOsobyBNaGithub
+```
+
+### 1. OSOBA A:
+
+W pliku `release-room/status.md` zmienia z:
+
+```
+Decyzja wdrożeniowa: NIEUSTALONA
+```
+
+na 
+
+```
+Decyzja wdrożeniowa: WDRAŻAMY W PIĄTEK
+```
+
+Finalnie:
+```
+git add release-room/status.md
+git commit -m "Zaproponuj wdrożenie w piątek"
+git push -u origin decision/deploy-loginOsobyANaGithub
+```
+
+### 2. OSOBA B: 
+
+W pliku `release-room/status.md` zmienia z:
+
+```
+Decyzja wdrożeniowa: NIEUSTALONA
+```
+
+na 
+
+```
+Decyzja wdrożeniowa: WDRAŻAMY W PONIEDZIAŁEK
+```
+
+Finalnie:
+
+```
+git add release-room/status.md
+git commit -m "Zaproponuj wdrożenie w poniedziałek"
+git push -u origin decision/deploy-loginOsobyBNaGithub
+```
+
+### 3. RELEASE MANAGER ROZPOCZYNA INTEGRACJĘ:
+
+```
+git checkout main
+git pull --ff-only
+git pull --no-rebase --no-edit origin decision/deploy-loginOsobyANaGithub
+```
+
+Tutaj jeszcze nie ma konfliktu. Integrujemy drugiego brancha:
+
+```
+git pull --no-rebase --no-edit origin decision/deploy-loginOsobyBNaGithub
+```
+
+W tym momencie Git zgłosi konflikt w pliku `release-room/status.md`. 
+
+Straszne! Okropne! Sodomia! Gomoria! Sosnowiec... Jak żyć, panie premierze? Rozwiązując konflikt, panie paprykarzu.
+
+### 4. ROZWIĄZANIE KONFLIKTU KROK PO KROKU
+
+1. __ Rozpoznanie problemu __
+
+```
+git status
+```
+
+W odpowiedzi Git powinien zwrócić coś w ten deseń:
+
+```
+<<<<<<< HEAD
+Decyzja wdrożeniowa: WDRAŻAMY W PIĄTEK
+=======
+Decyzja wdrożeniowa: WDRAŻAMY W PONIEDZIAŁEK
+>>>>>>> decision/deploy-loginOsobyBNaGithub
+```
+
+Wyjaśnienie oznaczeń:
+
+1. HEAD — wersja aktualnego brancha,
+2. część pod ======= — wersja dołączanego brancha,
+3. znaczniki nie są składnią programu ani komentarzami,
+4. człowiek musi zdecydować, jaki ma być wynik.
+
+2. __ SZYBKIE SPOTKANIE WDROŻENIOWE __
+
+Zespół ustawia licznik na 60 sekund. W tym czasie należy podjąć decyzję jak powinno wyglądać wdrożenie. Np.:
+```
+Decyzja wdrożeniowa: WDRAŻAMY W PONIEDZIAŁEK PO POWTÓRZENIU TESTÓW, NIE PÓŹNIEJ NIŻ W CZWARTEK PRZED WEEKENDEM!
+```
+
+Konieczne jest usunięcie znaczników konfliktu z pliku, zapisane (CTRL+S), a następnie:
+
+3. __ Rozwiązanie konfliktu __
+
+```
+git add release-room/status.md
+git commit -m "Rozwiąż konflikt terminu wdrożenia"
+git push origin main
+```
+
+### 5. FINAŁ
+
+Każdy członek zespołu wykonuje:
+
+```
+git checkout main
+git pull --ff-only
+git status
+git log --graph --oneline --decorate --all -15
+```
+
+Oczekiwana odpowiedź z `git status`:
+
+```
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+```
+
+W historii (tej z `git log`) powinno być widać:
+- commity wszystkich osób,
+- branche funkcjonalne,
+- co najmniej jeden merge,
+- commit rozwiązujący konflikt,
+- aktualny main.
+
+## GRATULACJE!
+
+https://forms.gle/4yWDRmA4zE7Fs2X18
